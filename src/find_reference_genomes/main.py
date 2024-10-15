@@ -4,8 +4,9 @@ from find_reference_genomes.lineage import Lineage
 
 
 def find_reference_genomes(name: str):
-    lineage = Lineage(*get_lineage(name))
-    print(lineage.pairs)
+    taxo = Lineage(*get_lineage(name))
+    for (lineage, rank) in taxo:
+        print(lineage, rank)
 
 
 def get_lineage(name: str) -> str:
