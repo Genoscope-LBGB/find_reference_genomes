@@ -3,24 +3,14 @@ import argparse
 import find_reference_genomes
 
 
-
-
-
 def main():
-    # parse command-line arguments
     parser = argparse.ArgumentParser(
-        description='Short description of what this script does. It will be displayed when running find_reference_genomes -h')
+        description="Find and download reference genomes from the NCBI")
     parser.add_argument(
-        '--first',
-        type=int,
+        "-n", "--name",
+        type=str,
         required=True,
-        help='Short description of the first argument')
-    parser.add_argument(
-        '--second',
-        type=int,
-        required=True,
-        help='Short description of the second argument')
+        help="Scientific name of the species of interest")
     args = parser.parse_args()
 
-    # run whatever
-    find_reference_genomes.dummy_function()
+    find_reference_genomes.find_reference_genomes(args.name)
