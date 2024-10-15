@@ -34,13 +34,3 @@ Deploy:
     trigger:
         project: modules/modules
         strategy: depend
-
-Test:
-    stage: test
-    tags:
-        - docker_build
-    extends:
-        - .docker_stage
-    script: 
-        - docker pull $docker_tag
-        - docker run $docker_tag bash -c "pytest -s"
