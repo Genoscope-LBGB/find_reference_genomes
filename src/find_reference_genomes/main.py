@@ -11,7 +11,7 @@ def find_reference_genomes(name: str):
 
     genomes = []
     for i, (node, rank) in enumerate(taxo):
-        if rank in ["no_rank", "superkingdom", "kingdom", "phylum"]:
+        if rank in ["no_rank", "superkingdom", "kingdom", "phylum", "class", "subclass"]:
             break
 
         new_genomes = get_genomes(node, rank)
@@ -49,7 +49,7 @@ def run_taxonkit(name: str) -> str:
     out, err = taxonkit_lineage.communicate()
 
     if taxonkit_lineage.returncode != 0:
-        print("Taxonkit exited with return code '{taxonkit_lineage.returncode}': {err}", file=sys.stderr)
+        print(f"Taxonkit exited with return code '{taxonkit_lineage.returncode}': {err}", file=sys.stderr)
         sys.exit(taxonkit_lineage.returncode)
 
     echo_name.stdout.close()
@@ -63,13 +63,17 @@ def get_genomes(node, rank):
     genomes = []
 
     ncbi_datasets = run_ncbi_dataset(node)
-    for report in ncbi_datasets["reports"]:
-        name = report["assembly_info"]["biosample"]["description"]["organism"]["organism_name"]
-        bioproject = report["assembly_info"]["bioproject_accession"]
-        assembly_level = report["assembly_info"]["assembly_level"]
-        sequence_length = report["assembly_stats"]["total_sequence_length"]
-        scaffold_n50 = report["assembly_stats"]["scaffold_n50"]
-        genomes.append(Genome(name, rank, bioproject, assembly_level, sequence_length, scaffold_n50))
+    if ncbi_datasets is not None:
+        for report in ncbi_datasets["reports"]:
+            try:
+                name = report["assembly_info"]["biosample"]["description"]["organism"]["organism_name"]
+                bioproject = report["assembly_info"]["bioproject_accession"]
+                assembly_level = report["assembly_info"]["assembly_level"]
+                sequence_length = report["assembly_stats"]["total_sequence_length"]
+                scaffold_n50 = report["assembly_stats"]["scaffold_n50"]
+                genomes.append(Genome(name, rank, bioproject, assembly_level, sequence_length, scaffold_n50))
+            except:
+                pass
 
     return genomes
 
@@ -82,14 +86,19 @@ def run_ncbi_dataset(node):
     )
     out, err = ncbi_datasets.communicate()
 
-    if ncbi_datasets.returncode != 0:
-        print("datasets exited with return code '{ncbi_datasets.returncode}': {err}", file=sys.stderr)
-        sys.exit(1)
+    # Can't check the return type because it returns 1 when it found no genome
+    # if ncbi_datasets.returncode != 0:
+    #     print(f"datasets exited with return code '{ncbi_datasets.returncode}': {err}", file=sys.stderr)
+    #     sys.exit(1)
 
-    out_json = json.loads(out.decode("utf-8"))
-    # dump_json = json.dumps(out_json, indent=2)
-    # print(dump_json)
-    return out_json
+    try:
+        out_json = json.loads(out.decode("utf-8"))
+        # dump_json = json.dumps(out_json, indent=2)
+        # print(dump_json)
+        return out_json
+    except json.decoder.JSONDecodeError:
+        # No genome found for this taxon
+        return None
 
 
 def is_already_in_set(genomes: list[Genome], genome: Genome):
