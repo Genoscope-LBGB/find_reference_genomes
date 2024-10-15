@@ -11,12 +11,15 @@ def find_reference_genomes(name: str):
 
     genomes = []
     for i, (node, rank) in enumerate(taxo):
-        if i < 5:
-            new_genomes = get_genomes(node, rank)
-            for genome in new_genomes:
-                if not is_already_in_set(genomes, genome):
-                    genomes.append(genome)
+        if rank in ["no_rank", "superkingdom", "kingdom", "phylum"]:
+            break
 
+        new_genomes = get_genomes(node, rank)
+        for genome in new_genomes:
+            if not is_already_in_set(genomes, genome):
+                genomes.append(genome)
+
+    print("Organism,Rank,Bioproject,Assembly_level,Cumul_size,scaffold_n50")
     for genome in genomes:
         print(genome)
 
@@ -63,15 +66,15 @@ def get_genomes(node, rank):
         bioproject = report["assembly_info"]["bioproject_accession"]
         assembly_level = report["assembly_info"]["assembly_level"]
         sequence_length = report["assembly_stats"]["total_sequence_length"]
-        contig_n50 = report["assembly_stats"]["contig_n50"]
-        genomes.append(Genome(name, rank, bioproject, assembly_level, sequence_length, contig_n50))
+        scaffold_n50 = report["assembly_stats"]["scaffold_n50"]
+        genomes.append(Genome(name, rank, bioproject, assembly_level, sequence_length, scaffold_n50))
 
     return genomes
 
 
 def run_ncbi_dataset(node):
     ncbi_datasets = subprocess.Popen(
-        ["datasets", "summary", "genome", "taxon", node],
+        ["datasets", "summary", "genome", "taxon", "--assembly-level", "chromosome,complete,scaffold", "--reference", node],
         stdout=subprocess.PIPE,
     )
     out = ncbi_datasets.communicate()[0]
