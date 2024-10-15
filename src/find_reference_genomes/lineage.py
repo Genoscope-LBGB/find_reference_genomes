@@ -1,11 +1,11 @@
 class Lineage:
-    def __init__(self, lineages: str, ranks: str):
+    def __init__(self, lineage: str, ranks: str):
         self.pairs = []
 
-        lineages_list = lineages.split(";")
+        nodes_list = lineage.split(";")
         ranks_list = ranks.split(";")
-        for i, (lineage, rank) in enumerate(zip(lineages_list, ranks_list)):
-            self.pairs.append((lineage, rank))
+        for i, (node, rank) in enumerate(zip(nodes_list, ranks_list)):
+            self.pairs.append((node, rank))
 
     def __iter__(self):
         self.pos = len(self.pairs) - 1
@@ -13,9 +13,9 @@ class Lineage:
 
     def __next__(self):
         if self.pos > 0:
-            lineage, rank = self.pairs[self.pos]
+            node, rank = self.pairs[self.pos]
             self.pos -= 1
-            return (lineage, rank)
+            return (node, rank)
         else:
             raise StopIteration
 
