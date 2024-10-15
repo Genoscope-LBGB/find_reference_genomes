@@ -42,12 +42,14 @@ def run_taxonkit(name: str) -> str:
         ["taxonkit", "lineage", "-i", "2", "-R"],
         stdin=taxonkit_name2taxid.stdout,
         stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
     )
     echo_name.wait()
     taxonkit_name2taxid.wait()
-    out = taxonkit_lineage.communicate()[0]
+    out, err = taxonkit_lineage.communicate()
 
     if taxonkit_lineage.returncode != 0:
+        print("Taxonkit exited with return code '{taxonkit_lineage.returncode}': {err}", file=sys.stderr)
         sys.exit(taxonkit_lineage.returncode)
 
     echo_name.stdout.close()
@@ -76,10 +78,14 @@ def run_ncbi_dataset(node):
     ncbi_datasets = subprocess.Popen(
         ["datasets", "summary", "genome", "taxon", "--assembly-level", "chromosome,complete,scaffold", "--reference", node],
         stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
     )
-    out = ncbi_datasets.communicate()[0]
+    out, err = ncbi_datasets.communicate()
+
     if ncbi_datasets.returncode != 0:
+        print("datasets exited with return code '{ncbi_datasets.returncode}': {err}", file=sys.stderr)
         sys.exit(1)
+
     out_json = json.loads(out.decode("utf-8"))
     # dump_json = json.dumps(out_json, indent=2)
     # print(dump_json)
