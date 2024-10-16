@@ -1,9 +1,39 @@
 import json
+import os
 import subprocess
 import sys
 
 from find_reference_genomes.genome import Genome
 from find_reference_genomes.lineage import Lineage
+
+
+def download_genomes(genomes_str: str, output_dir: str):
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    os.chdir(output_dir)
+
+    genomes_list = genomes_str.split(",")
+    run_ncbi_dataset_download(genomes_list)
+
+
+def run_ncbi_dataset_download(genomes):
+    ncbi_datasets = subprocess.Popen(
+        ["datasets", "download", "genome", "accession", "--assembly-level", "chromosome,complete,scaffold", "--include", "genome", *genomes],
+    )
+    ncbi_datasets.communicate()
+
+    unzip = subprocess.Popen(
+        ["unzip", "ncbi_dataset.zip"]
+    )
+    unzip.communicate()
+
+    os.system("mv ncbi_dataset/data/*/*.fna .")
+    os.system("rm -r ncbi_dataset.zip ncbi_dataset md5sum.txt README.md")
+
+    # Can't check the return type because it returns 1 when it found no genome
+    if ncbi_datasets.returncode != 0:
+        print(f"datasets exited with return code '{ncbi_datasets.returncode}': {err}", file=sys.stderr)
+        sys.exit(1)
 
 
 def find_reference_genomes(name: str):

@@ -1,4 +1,6 @@
 import argparse
+import os
+import sys
 
 import find_reference_genomes
 
@@ -8,9 +10,32 @@ def main():
         description="Find and download reference genomes from the NCBI")
     parser.add_argument(
         "-n", "--name",
+        dest="name",
         type=str,
-        required=True,
+        required=False,
+        default=None,
         help="Scientific name of the species of interest")
+    parser.add_argument(
+        "-d", "--download",
+        dest="download",
+        type=str,
+        required=False,
+        default=None,
+        help="Comma-separated list of PRJNAs to download (example: '-d PRJNA0001,PRJNA0002')")
+    parser.add_argument(
+        "-o", "--output",
+        dest="output_dir",
+        type=str,
+        required=False,
+        default=os.getcwd(),
+        help="If using --download, path to the output directory to store the downloaded genomes")
     args = parser.parse_args()
 
-    find_reference_genomes.find_reference_genomes(args.name)
+    if args.name is None and args.download is None:
+        print("Either --name or --download have to be used!", file=sys.stderr)
+        sys.exit(1)
+
+    if args.name:
+        find_reference_genomes.find_reference_genomes(args.name)
+    elif args.download:
+        find_reference_genomes.download_genomes(args.download, args.output_dir)
