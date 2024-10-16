@@ -49,7 +49,7 @@ def find_reference_genomes(name: str):
             if not is_already_in_set(genomes, genome):
                 genomes.append(genome)
 
-    print("Organism,Rank,Bioproject,Assembly_level,Cumul_size,scaffold_n50")
+    print("Organism,Rank,Accession,Bioproject,Assembly_level,Cumul_size,scaffold_n50")
     for genome in genomes:
         print(genome)
 
@@ -97,11 +97,12 @@ def get_genomes(node, rank):
         for report in ncbi_datasets["reports"]:
             try:
                 name = report["assembly_info"]["biosample"]["description"]["organism"]["organism_name"]
+                accession = report["current_accession"]
                 bioproject = report["assembly_info"]["bioproject_accession"]
                 assembly_level = report["assembly_info"]["assembly_level"]
                 sequence_length = report["assembly_stats"]["total_sequence_length"]
                 scaffold_n50 = report["assembly_stats"]["scaffold_n50"]
-                genomes.append(Genome(name, rank, bioproject, assembly_level, sequence_length, scaffold_n50))
+                genomes.append(Genome(name, rank, accession, bioproject, assembly_level, sequence_length, scaffold_n50))
             except:
                 pass
 
