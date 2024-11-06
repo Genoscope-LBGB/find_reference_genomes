@@ -117,10 +117,13 @@ def run_ncbi_dataset(node, level):
     )
     out, err = ncbi_datasets.communicate()
 
-    out_json = json.loads(out.decode("utf-8"))
-    # dump_json = json.dumps(out_json, indent=2)
-    # print(dump_json)
-    return out_json
+    try:
+        out_json = json.loads(out.decode("utf-8"))
+        # dump_json = json.dumps(out_json, indent=2)
+        # print(dump_json)
+        return out_json
+    except:
+        return { "total_count": 0 }
 
 
 def is_already_in_set(genomes: list[Genome], genome: Genome):
