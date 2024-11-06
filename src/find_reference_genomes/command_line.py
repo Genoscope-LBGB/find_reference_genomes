@@ -29,13 +29,28 @@ def main():
         required=False,
         default=os.getcwd(),
         help="If using --download, path to the output directory to store the downloaded genomes")
+    parser.add_argument(
+        "-l", "--level",
+        dest="level",
+        type=str,
+        required=False,
+        default="scaffold",
+        choices=["chromosome", "complete", "scaffold", "contig"],
+        help="Limits the results to at least this level of assembly")
     args = parser.parse_args()
 
     if args.name is None and args.download is None:
         print("Either --name or --download have to be used!", file=sys.stderr)
         sys.exit(1)
 
+    if args.level == "contig":
+        args.level = "chromosome,complete,scaffold,contig"
+    elif args.level == "scaffold":
+        args.level = "chromosome,complete,scaffold"
+    elif args.level == "complete":
+        args.level = "chromosome,complete"
+
     if args.name:
-        find_reference_genomes.find_reference_genomes(args.name)
+        find_reference_genomes.find_reference_genomes(args.name, args.level)
     elif args.download:
         find_reference_genomes.download_genomes(args.download, args.output_dir)

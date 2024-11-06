@@ -36,7 +36,7 @@ def run_ncbi_dataset_download(genomes):
         sys.exit(1)
 
 
-def find_reference_genomes(name: str):
+def find_reference_genomes(name: str, level: str):
     taxo = Lineage(*get_lineage(name))
 
     genomes = []
@@ -44,7 +44,7 @@ def find_reference_genomes(name: str):
         if rank in ["no_rank", "superkingdom", "kingdom", "phylum", "class", "subclass"]:
             break
 
-        new_genomes = get_genomes(node, rank)
+        new_genomes = get_genomes(node, rank, level)
         for genome in new_genomes:
             if not is_already_in_set(genomes, genome):
                 genomes.append(genome)
@@ -89,11 +89,11 @@ def run_taxonkit(name: str) -> str:
     return out.decode("utf-8")
 
 
-def get_genomes(node, rank):
+def get_genomes(node, rank, level):
     genomes = []
 
-    ncbi_datasets = run_ncbi_dataset(node)
-    if ncbi_datasets is not None:
+    ncbi_datasets = run_ncbi_dataset(node, level)
+    if ncbi_datasets["total_count"] > 0:
         for report in ncbi_datasets["reports"]:
             try:
                 name = report["assembly_info"]["biosample"]["description"]["organism"]["organism_name"]
@@ -109,27 +109,18 @@ def get_genomes(node, rank):
     return genomes
 
 
-def run_ncbi_dataset(node):
+def run_ncbi_dataset(node, level):
     ncbi_datasets = subprocess.Popen(
-        ["datasets", "summary", "genome", "taxon", "--assembly-level", "chromosome,complete,scaffold", "--reference", node],
+        ["datasets", "summary", "genome", "taxon", "--assembly-level", level, "--reference", node],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
     out, err = ncbi_datasets.communicate()
 
-    # Can't check the return type because it returns 1 when it found no genome
-    # if ncbi_datasets.returncode != 0:
-    #     print(f"datasets exited with return code '{ncbi_datasets.returncode}': {err}", file=sys.stderr)
-    #     sys.exit(1)
-
-    try:
-        out_json = json.loads(out.decode("utf-8"))
-        # dump_json = json.dumps(out_json, indent=2)
-        # print(dump_json)
-        return out_json
-    except json.decoder.JSONDecodeError:
-        # No genome found for this taxon
-        return None
+    out_json = json.loads(out.decode("utf-8"))
+    # dump_json = json.dumps(out_json, indent=2)
+    # print(dump_json)
+    return out_json
 
 
 def is_already_in_set(genomes: list[Genome], genome: Genome):
