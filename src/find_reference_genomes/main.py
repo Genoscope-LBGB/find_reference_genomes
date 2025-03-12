@@ -48,7 +48,7 @@ def find_reference_genomes(name: str, level: str, max_rank: str = None, allow_cl
 
     genomes = []
     for i, (node, rank) in enumerate(taxo):
-        if rank == "clade" and not allow_clade:
+        if rank not in rank_hierarchy or (rank == "clade" and not allow_clade):
             continue
 
         if rank != "clade" and rank_hierarchy.index(rank) >= max_rank_index:
