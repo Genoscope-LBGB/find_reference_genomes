@@ -124,8 +124,9 @@ def get_genomes(node, rank, level):
 
 def run_ncbi_dataset(node, level):
     ncbi_datasets = subprocess.Popen(
-        ["datasets", "summary", "genome", "taxon", "--assembly-level", level, "--reference", node, 
-         "--exclude-atypical", "--exclude-multi-isolate", "--mag exclude"
+        [
+            "datasets", "summary", "genome", "taxon", "--assembly-level", level, "--reference", node, 
+            "--exclude-atypical", "--exclude-multi-isolate", "--mag", "exclude",
         ],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
