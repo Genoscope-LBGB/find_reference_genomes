@@ -43,7 +43,7 @@ def main():
         type=str,
         required=False,
         default="family",
-        choices=["species", "genus", "family", "order", "class", "phylum", "kingdom", "superkingdom"],
+        choices=["strain", "subspecies", "species", "genus", "subfamily", "family", "suborder", "order", "subclass", "class", "phylum", "kingdom", "superkingdom"],
         help="Limits the search to taxonomic ranks up to the specified level (e.g., '--max-rank genus' will only search up to genus level)")
     parser.add_argument(
         "--allow-clade",
