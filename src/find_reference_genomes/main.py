@@ -48,10 +48,10 @@ def find_reference_genomes(name: str, level: str, max_rank: str = None):
 
     genomes = []
     for i, (node, rank) in enumerate(taxo):
-        if rank not in rank_hierarchy or rank_hierarchy.index(rank) >= max_rank_index:
+        if rank not in rank_hierarchy:
             continue
-            
-        if rank in ["no_rank", "superkingdom", "kingdom", "phylum", "class", "subclass"] and max_rank is None:
+
+        if rank_hierarchy.index(rank) >= max_rank_index:
             break
 
         new_genomes = get_genomes(node, rank, level)
