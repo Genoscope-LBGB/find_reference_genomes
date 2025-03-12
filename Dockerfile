@@ -13,6 +13,3 @@ COPY . /gitlab/repo
 # change directory for the remaining run commands
 WORKDIR /gitlab/repo
 
-# install the project module
-RUN pip install .
-

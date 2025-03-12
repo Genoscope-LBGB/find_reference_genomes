@@ -37,6 +37,14 @@ def main():
         default="scaffold",
         choices=["chromosome", "complete", "scaffold", "contig"],
         help="Limits the results to at least this level of assembly")
+    parser.add_argument(
+        "--max-rank",
+        dest="max_rank",
+        type=str,
+        required=False,
+        default="family",
+        choices=["species", "genus", "family", "order", "class", "phylum", "kingdom", "superkingdom"],
+        help="Limits the search to taxonomic ranks up to the specified level (e.g., '--max-rank genus' will only search up to genus level)")
     args = parser.parse_args()
 
     if args.name is None and args.download is None:
@@ -51,6 +59,6 @@ def main():
         args.level = "chromosome,complete"
 
     if args.name:
-        find_reference_genomes.find_reference_genomes(args.name, args.level)
+        find_reference_genomes.find_reference_genomes(args.name, args.level, args.max_rank)
     elif args.download:
         find_reference_genomes.download_genomes(args.download, args.output_dir)

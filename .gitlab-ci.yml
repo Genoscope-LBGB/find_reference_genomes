@@ -1,10 +1,9 @@
 stages: 
     - build
-    - test
     - deploy
 
 variables:
-    deploygroup   : "rdbioseq"
+    deploygroup   : "lbgb"
     modulename    : "find_reference_genomes"
     moduleversion : "0.1"
     PROJECT_PATH  : $CI_PROJECT_PATH

@@ -36,12 +36,22 @@ def run_ncbi_dataset_download(genomes):
         sys.exit(1)
 
 
-def find_reference_genomes(name: str, level: str):
+def find_reference_genomes(name: str, level: str, max_rank: str = None):
     taxo = Lineage(*get_lineage(name))
+
+    rank_hierarchy = [
+        "species", "genus", "family", "order", 
+        "subclass", "class", "phylum", "kingdom", "superkingdom"
+    ]
+    
+    max_rank_index = len(rank_hierarchy) if max_rank is None else rank_hierarchy.index(max_rank) + 1
 
     genomes = []
     for i, (node, rank) in enumerate(taxo):
-        if rank in ["no_rank", "superkingdom", "kingdom", "phylum", "class", "subclass"]:
+        if rank not in rank_hierarchy or rank_hierarchy.index(rank) >= max_rank_index:
+            continue
+            
+        if rank in ["no_rank", "superkingdom", "kingdom", "phylum", "class", "subclass"] and max_rank is None:
             break
 
         new_genomes = get_genomes(node, rank, level)
