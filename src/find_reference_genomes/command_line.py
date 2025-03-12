@@ -45,6 +45,14 @@ def main():
         default="family",
         choices=["species", "genus", "family", "order", "class", "phylum", "kingdom", "superkingdom"],
         help="Limits the search to taxonomic ranks up to the specified level (e.g., '--max-rank genus' will only search up to genus level)")
+    parser.add_argument(
+        "--allow-clade",
+        dest="allow_clade",
+        action="store_true",
+        help="Allow the search to include clade level (default: False)",
+        default=False
+    )
+    
     args = parser.parse_args()
 
     if args.name is None and args.download is None:
@@ -59,6 +67,6 @@ def main():
         args.level = "chromosome,complete"
 
     if args.name:
-        find_reference_genomes.find_reference_genomes(args.name, args.level, args.max_rank)
+        find_reference_genomes.find_reference_genomes(args.name, args.level, args.max_rank, args.allow_clade)
     elif args.download:
         find_reference_genomes.download_genomes(args.download, args.output_dir)
