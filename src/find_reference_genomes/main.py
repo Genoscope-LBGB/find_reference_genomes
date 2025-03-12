@@ -40,7 +40,7 @@ def find_reference_genomes(name: str, level: str, max_rank: str = None):
     taxo = Lineage(*get_lineage(name))
 
     rank_hierarchy = [
-        "species", "genus", "family", "order", 
+        "species", "genus", "family", "clade", "order", 
         "subclass", "class", "phylum", "kingdom", "superkingdom"
     ]
     
