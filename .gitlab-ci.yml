@@ -31,5 +31,5 @@ Deploy:
     rules:
         - if: '$CI_COMMIT_BRANCH == "master"'
     trigger:
-        project: modules/modules
+        project: downstream/modules
         strategy: depend
