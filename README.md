@@ -1,9 +1,24 @@
 # find_reference_genomes
 
-find_reference_genomes is a rdbioseq project
+Easily find and download reference genomes stored at NCBI
 
-A new version of the environment module associated with this project is deployed upon every commit on master, except if the commit message contains [skip ci]. The default version increment is patch. To ship a new minor or major version of the module, update moduleversion in .gitlab-ci.yml
+```
+find_reference_genomes -h
+usage: find_reference_genomes [-h] [-n NAME] [-d DOWNLOAD] [-o OUTPUT_DIR] [-l {chromosome,complete,scaffold,contig}]
+                              [--max-rank {strain,subspecies,species,genus,subfamily,family,suborder,order,subclass,class,phylum,kingdom,superkingdom}] [--allow-clade]
 
-It is recommanded that you setup tests for find_reference_genomes in as many `test_*.py` scripts as you want inside the `tests` folder: they will be executed by `pytest` everytime you push to GitLab, and the deployment stage will not be triggered unless they are successful
+Find and download reference genomes from the NCBI
 
-This lib can be installed using `pip install`. Once installed, the scripts in `bin/` will be available in your $PATH
+options:
+  -h, --help            show this help message and exit
+  -n NAME, --name NAME  Scientific name of the species of interest
+  -d DOWNLOAD, --download DOWNLOAD
+                        Comma-separated list of PRJNAs to download (example: '-d PRJNA0001,PRJNA0002')
+  -o OUTPUT_DIR, --output OUTPUT_DIR
+                        If using --download, path to the output directory to store the downloaded genomes
+  -l {chromosome,complete,scaffold,contig}, --level {chromosome,complete,scaffold,contig}
+                        Limits the results to at least this level of assembly
+  --max-rank {strain,subspecies,species,genus,subfamily,family,suborder,order,subclass,class,phylum,kingdom,superkingdom}
+                        Limits the search to taxonomic ranks up to the specified level (e.g., '--max-rank genus' will only search up to genus level)
+  --allow-clade         Allow the search to include clade level (default: False)
+```
