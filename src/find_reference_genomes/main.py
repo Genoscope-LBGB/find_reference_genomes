@@ -22,9 +22,7 @@ def run_ncbi_dataset_download(genomes):
     )
     ncbi_datasets.communicate()
 
-    unzip = subprocess.Popen(
-        ["unzip", "ncbi_dataset.zip"]
-    )
+    unzip = subprocess.Popen(["unzip", "ncbi_dataset.zip"])
     unzip.communicate()
 
     os.system("mv ncbi_dataset/data/*/*.fna .")
@@ -40,10 +38,22 @@ def find_reference_genomes(name: str, level: str, max_rank: str = None, allow_cl
     taxo = Lineage(*get_lineage(name))
 
     rank_hierarchy = [
-        "strain", "subspecies", "species", "genus", "subfamily", "family", "suborder", "order",
-        "subclass", "class", "phylum", "kingdom", "superkingdom", "domain"
+        "strain",
+        "subspecies",
+        "species",
+        "genus",
+        "subfamily",
+        "family",
+        "suborder",
+        "order",
+        "subclass",
+        "class",
+        "phylum",
+        "kingdom",
+        "superkingdom",
+        "domain",
     ]
-    
+
     max_rank_index = len(rank_hierarchy) if max_rank is None else rank_hierarchy.index(max_rank) + 1
 
     genomes = []
@@ -62,7 +72,7 @@ def find_reference_genomes(name: str, level: str, max_rank: str = None, allow_cl
         if rank != "clade" and rank == max_rank:
             break
 
-    print("Organism,Rank,Accession,Bioproject,Assembly_level,Cumul_size,scaffold_n50")
+    print("Organism,Taxid,Rank,Accession,Bioproject,Assembly_level,Cumul_size,scaffold_n50")
     for genome in genomes:
         print(genome)
 
@@ -110,12 +120,13 @@ def get_genomes(node, rank, level):
         for report in ncbi_datasets["reports"]:
             try:
                 name = report["assembly_info"]["biosample"]["description"]["organism"]["organism_name"]
+                taxid = report["assembly_info"]["biosample"]["description"]["organism"]["tax_id"]
                 accession = report["current_accession"]
                 bioproject = report["assembly_info"]["bioproject_accession"]
                 assembly_level = report["assembly_info"]["assembly_level"]
                 sequence_length = report["assembly_stats"]["total_sequence_length"]
                 scaffold_n50 = report["assembly_stats"]["scaffold_n50"]
-                genomes.append(Genome(name, rank, accession, bioproject, assembly_level, sequence_length, scaffold_n50))
+                genomes.append(Genome(name, taxid, rank, accession, bioproject, assembly_level, sequence_length, scaffold_n50))
             except:
                 pass
 
@@ -125,8 +136,18 @@ def get_genomes(node, rank, level):
 def run_ncbi_dataset(node, level):
     ncbi_datasets = subprocess.Popen(
         [
-            "datasets", "summary", "genome", "taxon", "--assembly-level", level, "--reference", node, 
-            "--exclude-atypical", "--exclude-multi-isolate", "--mag", "exclude",
+            "datasets",
+            "summary",
+            "genome",
+            "taxon",
+            "--assembly-level",
+            level,
+            "--reference",
+            node,
+            "--exclude-atypical",
+            "--exclude-multi-isolate",
+            "--mag",
+            "exclude",
         ],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -139,7 +160,7 @@ def run_ncbi_dataset(node, level):
         # print(dump_json)
         return out_json
     except:
-        return { "total_count": 0 }
+        return {"total_count": 0}
 
 
 def is_already_in_set(genomes: list[Genome], genome: Genome):
