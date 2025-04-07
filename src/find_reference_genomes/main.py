@@ -41,7 +41,7 @@ def find_reference_genomes(name: str, level: str, max_rank: str = None, allow_cl
 
     rank_hierarchy = [
         "strain", "subspecies", "species", "genus", "subfamily", "family", "suborder", "order",
-        "subclass", "class", "phylum", "kingdom", "superkingdom"
+        "subclass", "class", "phylum", "kingdom", "superkingdom", "domain"
     ]
     
     max_rank_index = len(rank_hierarchy) if max_rank is None else rank_hierarchy.index(max_rank) + 1
