@@ -72,7 +72,7 @@ def find_reference_genomes(name: str, level: str, max_rank: str = None, allow_cl
         if rank != "clade" and rank == max_rank:
             break
 
-    print("Organism,Taxid,Rank,Accession,Bioproject,Assembly_level,Cumul_size,scaffold_n50")
+    print("Organism,Taxid,Rank,Accession,Bioproject,Assembly_level,Cumul_size,scaffold_n50,Chromosome_number")
     for genome in genomes:
         print(genome)
 
@@ -126,7 +126,8 @@ def get_genomes(node, rank, level):
                 assembly_level = report["assembly_info"]["assembly_level"]
                 sequence_length = report["assembly_stats"]["total_sequence_length"]
                 scaffold_n50 = report["assembly_stats"]["scaffold_n50"]
-                genomes.append(Genome(name, taxid, rank, accession, bioproject, assembly_level, sequence_length, scaffold_n50))
+                chromosome_number = "-1" if "total_number_of_chromosomes" not in report["assembly_stats"] else report["assembly_stats"]["total_number_of_chromosomes"]
+                genomes.append(Genome(name, taxid, rank, accession, bioproject, assembly_level, sequence_length, scaffold_n50, chromosome_number))
             except:
                 pass
 
