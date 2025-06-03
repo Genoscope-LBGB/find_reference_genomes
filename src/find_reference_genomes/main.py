@@ -1,37 +1,74 @@
+import glob
 import json
 import os
 import subprocess
+import shutil
 import sys
+import time
+from typing import Dict, List
 
 from find_reference_genomes.genome import Genome
 from find_reference_genomes.lineage import Lineage
 
 
 def download_genomes(genomes_str: str, output_dir: str):
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    os.chdir(output_dir)
-
     genomes_list = genomes_str.split(",")
-    run_ncbi_dataset_download(genomes_list)
+    for genome in genomes_list:
+        run_ncbi_dataset_download(genome, output_dir)
 
 
-def run_ncbi_dataset_download(genomes):
-    ncbi_datasets = subprocess.Popen(
-        ["datasets", "download", "genome", "accession", "--assembly-level", "chromosome,complete,scaffold", "--include", "genome", *genomes],
-    )
-    ncbi_datasets.communicate()
+def run_ncbi_dataset_download(accession: str, output_prefix: str, retries: int = 3) -> Dict[str, List[str]] | None:
+    output_zip = f"{output_prefix}.zip"
 
-    unzip = subprocess.Popen(["unzip", "ncbi_dataset.zip"])
-    unzip.communicate()
+    attempt = 0
+    while attempt < retries:
+        try:
+            # Dehydrated download
+            subprocess.run(
+                [
+                    "datasets",
+                    "download",
+                    "genome",
+                    "accession",
+                    accession,
+                    "--assembly-level",
+                    "chromosome,complete,scaffold",
+                    "--dehydrated",
+                    "--include",
+                    "genome",
+                    "--filename",
+                    output_zip,
+                ],
+                check=True,
+            )
 
-    os.system("mv ncbi_dataset/data/*/*.fna .")
-    os.system("rm -r ncbi_dataset.zip ncbi_dataset md5sum.txt README.md")
+            # Unpack and rehydrate
+            shutil.unpack_archive(output_zip, output_prefix)
+            subprocess.run(["datasets", "rehydrate", "--directory", output_prefix], check=True)
 
-    # Can't check the return type because it returns 1 when it found no genome
-    if ncbi_datasets.returncode != 0:
-        print(f"datasets exited with return code '{ncbi_datasets.returncode}': {err}", file=sys.stderr)
-        sys.exit(1)
+        except subprocess.CalledProcessError as e:
+            print(e)
+            if attempt > retries:
+                raise RuntimeError(f"Download failed after {retries} retries") from e
+            print(f"Attempt {attempt} failed, retrying in 5 seconds...")
+            time.sleep(5)
+            attempt += 1
+            
+        except FileNotFoundError as e:
+            print(e)
+            sys.exit(1)
+
+        finally:   
+            fna_files = glob.glob(f"{output_prefix}/ncbi_dataset/data/*/*.fna")
+            for f in fna_files:
+                shutil.move(f, output_prefix)
+                
+            shutil.rmtree(f"{output_prefix}/ncbi_dataset")
+            os.remove(f"{output_prefix}/md5sum.txt")
+            os.remove(f"{output_prefix}/README.md")
+            os.remove(output_zip)
+            
+            break
 
 
 def find_reference_genomes(name: str, level: str, max_rank: str = None, allow_clade: bool = False):
