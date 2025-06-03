@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="find_reference_genomes",
-    version="1.0.1",
+    version="1.0.2",
     author="bistace",
     author_email="bistace@genoscope.cns.fr",
     description="find_reference_genomes is a rdbioseq tool",
