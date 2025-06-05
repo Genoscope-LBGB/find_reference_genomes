@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="find_reference_genomes",
-    version="1.0.3",
+    version="1.0.4",
     author="bistace",
     author_email="bistace@genoscope.cns.fr",
     description="Easily find and download reference genomes stored at NCBI",

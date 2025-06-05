@@ -49,9 +49,14 @@ def run_ncbi_dataset_download(accession: str, assembly_name: str, output_dir: st
     ftp.quit()
     
     print(f"Decompressing {compressed_name}")
+    chunk_size = 100 * 1024 * 1024  # 100 MB
     with gzip.open(compressed_name, "rb") as f_in:
         with open(decompressed_name, "wb") as f_out:
-            f_out.write(f_in.read())
+            while True:
+                chunk = f_in.read(chunk_size)
+                if not chunk:
+                    break
+                f_out.write(chunk)
             
     os.remove(compressed_name)
             
