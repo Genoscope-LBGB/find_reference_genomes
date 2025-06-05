@@ -2,6 +2,10 @@
 
 Easily find and download reference genomes stored at NCBI
 
+# Dependencies
+- [NCBI datasets](https://github.com/ncbi/datasets) 
+- Python >= 3.7
+
 ```
 find_reference_genomes -h
 usage: find_reference_genomes [-h] [-n NAME] [-d DOWNLOAD] [-o OUTPUT_DIR] [-l {chromosome,complete,scaffold,contig}]
@@ -13,7 +17,7 @@ options:
   -h, --help            show this help message and exit
   -n NAME, --name NAME  Scientific name of the species of interest
   -d DOWNLOAD, --download DOWNLOAD
-                        Comma-separated list of PRJNAs to download (example: '-d PRJNA0001,PRJNA0002')
+                        Comma-separated list of PRJNAs to download (example: '-d GCA_047652355.1,GCA_049901935.1,GCA_048126915.1')
   -o OUTPUT_DIR, --output OUTPUT_DIR
                         If using --download, path to the output directory to store the downloaded genomes
   -l {chromosome,complete,scaffold,contig}, --level {chromosome,complete,scaffold,contig}
