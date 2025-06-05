@@ -21,7 +21,7 @@ def main():
         type=str,
         required=False,
         default=None,
-        help="Comma-separated list of PRJNAs to download (example: '-d PRJNA0001,PRJNA0002')")
+        help="Comma-separated list of GCA accessions to download (example: '-d GCA_047652355.1,GCA_049901935.1,GCA_048126915.1')")
     parser.add_argument(
         "-o", "--output",
         dest="output_dir",

@@ -1,8 +1,8 @@
-import glob
+import ftplib
+import gzip
 import json
 import os
 import subprocess
-import shutil
 import sys
 import time
 from typing import Dict, List
@@ -12,64 +12,49 @@ from find_reference_genomes.lineage import Lineage
 
 
 def download_genomes(genomes_str: str, output_dir: str):
+    try:
+        os.mkdir(output_dir)
+    except:
+        pass
+    
     genomes_list = genomes_str.split(",")
     for genome in genomes_list:
-        run_ncbi_dataset_download(genome, output_dir)
+        if not genome.startswith("GCA"):
+            print(f"Skipping {genome}, this does not look like a GCA accession!", file=sys.stderr)
+            continue
+        
+        assembly_name = get_assembly_name(genome)
+        run_ncbi_dataset_download(genome, assembly_name, output_dir)
 
 
-def run_ncbi_dataset_download(accession: str, output_prefix: str, retries: int = 3) -> Dict[str, List[str]] | None:
-    output_zip = f"{output_prefix}.zip"
-
-    attempt = 0
-    while attempt < retries:
-        try:
-            # Dehydrated download
-            subprocess.run(
-                [
-                    "datasets",
-                    "download",
-                    "genome",
-                    "accession",
-                    accession,
-                    "--assembly-level",
-                    "chromosome,complete,scaffold",
-                    "--dehydrated",
-                    "--include",
-                    "genome",
-                    "--filename",
-                    output_zip,
-                ],
-                check=True,
-            )
-
-            # Unpack and rehydrate
-            shutil.unpack_archive(output_zip, output_prefix)
-            subprocess.run(["datasets", "rehydrate", "--directory", output_prefix], check=True)
-
-        except subprocess.CalledProcessError as e:
-            print(e)
-            if attempt > retries:
-                raise RuntimeError(f"Download failed after {retries} retries") from e
-            print(f"Attempt {attempt} failed, retrying in 5 seconds...")
-            time.sleep(5)
-            attempt += 1
+def run_ncbi_dataset_download(accession: str, assembly_name: str, output_dir: str) -> Dict[str, List[str]] | None:
+    ftp_url = "ftp.ncbi.nih.gov"
+    ftp = ftplib.FTP(ftp_url)
+    ftp.login()
+    
+    base_path = "genomes/all"
+    accession_url = ""
+    for i, c in enumerate(accession.split(".")[0].replace("_", "")):
+        if i % 3 == 0:
+            accession_url += "/"
+        accession_url += c
+        
+    url = f"{base_path}{accession_url}/{accession}_{assembly_name}/{accession}_{assembly_name}_genomic.fna.gz"
+    print(f"Dowloading ftp://{ftp_url}/{url}", file=sys.stderr)
+    
+    compressed_name = f"{output_dir}/{accession}.fna.gz"
+    decompressed_name = f"{output_dir}/{accession}.fna"
+    with open(compressed_name, "wb") as f:
+        ftp.retrbinary(f"RETR {url}", f.write)
+    ftp.quit()
+    
+    print(f"Decompressing {compressed_name}")
+    with gzip.open(compressed_name, "rb") as f_in:
+        with open(decompressed_name, "wb") as f_out:
+            f_out.write(f_in.read())
             
-        except FileNotFoundError as e:
-            print(e)
-            sys.exit(1)
-
-        finally:   
-            fna_files = glob.glob(f"{output_prefix}/ncbi_dataset/data/*/*.fna")
-            for f in fna_files:
-                shutil.move(f, output_prefix)
-                
-            shutil.rmtree(f"{output_prefix}/ncbi_dataset")
-            os.remove(f"{output_prefix}/md5sum.txt")
-            os.remove(f"{output_prefix}/README.md")
-            os.remove(output_zip)
+    os.remove(compressed_name)
             
-            break
-
 
 def find_reference_genomes(name: str, level: str, max_rank: str = None, allow_clade: bool = False):
     taxo = Lineage(*get_lineage(name))
@@ -152,7 +137,8 @@ def run_taxonkit(name: str) -> str:
 def get_genomes(node, rank, level):
     genomes = []
 
-    ncbi_datasets = run_ncbi_dataset(node, level)
+    ncbi_datasets = run_ncbi_dataset_summary_taxon(node, level)
+    time.sleep(2)
     if ncbi_datasets["total_count"] > 0:
         for report in ncbi_datasets["reports"]:
             try:
@@ -171,7 +157,18 @@ def get_genomes(node, rank, level):
     return genomes
 
 
-def run_ncbi_dataset(node, level):
+def get_assembly_name(accession):
+    ncbi_datasets = run_ncbi_dataset_summary_accession(accession)
+    if ncbi_datasets["total_count"] > 0:
+        for report in ncbi_datasets["reports"]:
+            try:
+                assembly_name = report["assembly_info"]["assembly_name"]
+                return assembly_name
+            except:
+                pass
+    
+    
+def run_ncbi_dataset_summary_taxon(node, level):
     ncbi_datasets = subprocess.Popen(
         [
             "datasets",
@@ -182,6 +179,29 @@ def run_ncbi_dataset(node, level):
             level,
             "--reference",
             node,
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    out, err = ncbi_datasets.communicate()
+
+    try:
+        out_json = json.loads(out.decode("utf-8"))
+        # dump_json = json.dumps(out_json, indent=2)
+        # print(dump_json)
+        return out_json
+    except:
+        return {"total_count": 0}
+    
+    
+def run_ncbi_dataset_summary_accession(accession):
+    ncbi_datasets = subprocess.Popen(
+        [
+            "datasets",
+            "summary",
+            "genome",
+            "accession",
+            accession
         ],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
