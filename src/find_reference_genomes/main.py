@@ -1,7 +1,7 @@
-import ftplib
 import gzip
 import json
 import os
+import requests
 import subprocess
 import sys
 import time
@@ -28,10 +28,8 @@ def download_genomes(genomes_str: str, output_dir: str):
 
 
 def run_ncbi_dataset_download(accession: str, assembly_name: str, output_dir: str) -> Dict[str, List[str]] | None:
-    ftp_url = "ftp.ncbi.nih.gov"
-    ftp = ftplib.FTP(ftp_url)
-    ftp.login()
-    
+    base_url = "https://ftp.ncbi.nih.gov"
+
     base_path = "genomes/all"
     accession_url = ""
     for i, c in enumerate(accession.split(".")[0].replace("_", "")):
@@ -39,14 +37,17 @@ def run_ncbi_dataset_download(accession: str, assembly_name: str, output_dir: st
             accession_url += "/"
         accession_url += c
         
-    url = f"{base_path}{accession_url}/{accession}_{assembly_name}/{accession}_{assembly_name}_genomic.fna.gz"
-    print(f"Dowloading ftp://{ftp_url}/{url}", file=sys.stderr)
-    
+    url = f"{base_url}/{base_path}{accession_url}/{accession}_{assembly_name}/{accession}_{assembly_name}_genomic.fna.gz"
+    print(f"Downloading {url}", file=sys.stderr)
+
     compressed_name = f"{output_dir}/{accession}.fna.gz"
     decompressed_name = f"{output_dir}/{accession}.fna"
+    response = requests.get(url, stream=True)
+    response.raise_for_status()
+
     with open(compressed_name, "wb") as f:
-        ftp.retrbinary(f"RETR {url}", f.write)
-    ftp.quit()
+        for chunk in response.iter_content(chunk_size=8192):
+            f.write(chunk)
     
     print(f"Decompressing {compressed_name}")
     chunk_size = 100 * 1024 * 1024  # 100 MB
