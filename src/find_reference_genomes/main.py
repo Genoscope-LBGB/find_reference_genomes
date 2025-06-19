@@ -16,13 +16,13 @@ def download_genomes(genomes_str: str, output_dir: str):
         os.mkdir(output_dir)
     except:
         pass
-    
+
     genomes_list = genomes_str.split(",")
     for genome in genomes_list:
-        if not genome.startswith("GCA"):
-            print(f"Skipping {genome}, this does not look like a GCA accession!", file=sys.stderr)
+        if not genome.startswith("GCA") and not genome.startswith("GCF"):
+            print(f"Skipping {genome}, this does not look like a GCA/GCF accession!", file=sys.stderr)
             continue
-        
+
         assembly_name = get_assembly_name(genome)
         run_ncbi_dataset_download(genome, assembly_name, output_dir)
 
@@ -36,7 +36,7 @@ def run_ncbi_dataset_download(accession: str, assembly_name: str, output_dir: st
         if i % 3 == 0:
             accession_url += "/"
         accession_url += c
-        
+
     url = f"{base_url}/{base_path}{accession_url}/{accession}_{assembly_name}/{accession}_{assembly_name}_genomic.fna.gz"
     print(f"Downloading {url}", file=sys.stderr)
 
@@ -48,7 +48,7 @@ def run_ncbi_dataset_download(accession: str, assembly_name: str, output_dir: st
     with open(compressed_name, "wb") as f:
         for chunk in response.iter_content(chunk_size=8192):
             f.write(chunk)
-    
+
     print(f"Decompressing {compressed_name}")
     chunk_size = 100 * 1024 * 1024  # 100 MB
     with gzip.open(compressed_name, "rb") as f_in:
@@ -58,9 +58,9 @@ def run_ncbi_dataset_download(accession: str, assembly_name: str, output_dir: st
                 if not chunk:
                     break
                 f_out.write(chunk)
-            
+
     os.remove(compressed_name)
-            
+
 
 def find_reference_genomes(name: str, level: str, max_rank: str = None, allow_clade: bool = False):
     taxo = Lineage(*get_lineage(name))
@@ -155,7 +155,9 @@ def get_genomes(node, rank, level):
                 assembly_level = report["assembly_info"]["assembly_level"]
                 sequence_length = report["assembly_stats"]["total_sequence_length"]
                 scaffold_n50 = report["assembly_stats"]["scaffold_n50"]
-                chromosome_number = "-1" if "total_number_of_chromosomes" not in report["assembly_stats"] else report["assembly_stats"]["total_number_of_chromosomes"]
+                chromosome_number = (
+                    "-1" if "total_number_of_chromosomes" not in report["assembly_stats"] else report["assembly_stats"]["total_number_of_chromosomes"]
+                )
                 genomes.append(Genome(name, taxid, rank, accession, bioproject, assembly_level, sequence_length, scaffold_n50, chromosome_number))
             except:
                 pass
@@ -172,8 +174,8 @@ def get_assembly_name(accession):
                 return assembly_name
             except:
                 pass
-    
-    
+
+
 def run_ncbi_dataset_summary_taxon(node, level):
     ncbi_datasets = subprocess.Popen(
         [
@@ -198,17 +200,11 @@ def run_ncbi_dataset_summary_taxon(node, level):
         return out_json
     except:
         return {"total_count": 0}
-    
-    
+
+
 def run_ncbi_dataset_summary_accession(accession):
     ncbi_datasets = subprocess.Popen(
-        [
-            "datasets",
-            "summary",
-            "genome",
-            "accession",
-            accession
-        ],
+        ["datasets", "summary", "genome", "accession", accession],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
