@@ -85,4 +85,4 @@ def main():
         find_reference_genomes.find_reference_genomes(args.name, args.level, args.max_rank, args.allow_clade)
     elif args.download:
         find_reference_genomes.download_genomes(
-            args.download, args.output_dir, download_proteins=proteins=args.download_proteins, download_genome=(not args.no_genome))
+            args.download, args.output_dir, download_proteins=args.download_proteins, download_genome=(not args.no_genome))
