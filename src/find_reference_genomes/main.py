@@ -11,23 +11,26 @@ from find_reference_genomes.genome import Genome
 from find_reference_genomes.lineage import Lineage
 
 
-def download_genomes(genomes_str: str, output_dir: str):
+def download_genomes(genomes_str: str, output_dir: str, download_proteins: bool = False, download_genome: bool = True):
     try:
-        os.mkdir(output_dir)
-    except:
+        os.makedirs(output_dir, exist_ok=True)
+    except Exception:
         pass
 
     genomes_list = genomes_str.split(",")
-    for genome in genomes_list:
-        if not genome.startswith("GCA") and not genome.startswith("GCF"):
-            print(f"Skipping {genome}, this does not look like a GCA/GCF accession!", file=sys.stderr)
+    for accession in genomes_list:
+        if not accession.startswith("GCA") and not accession.startswith("GCF"):
+            print(f"Skipping {accession}, this does not look like a GCA/GCF accession!", file=sys.stderr)
             continue
 
-        assembly_name = get_assembly_name(genome)
-        run_ncbi_dataset_download(genome, assembly_name, output_dir)
+        assembly_name = get_assembly_name(accession)
+        if download_genome:
+            download(accession, assembly_name, output_dir)
+        if download_proteins:
+            download_proteins(accession, assembly_name, output_dir)
 
 
-def run_ncbi_dataset_download(accession: str, assembly_name: str, output_dir: str) -> Dict[str, List[str]] | None:
+def download(accession: str, assembly_name: str, output_dir: str) -> Dict[str, List[str]] | None:
     base_url = "https://ftp.ncbi.nih.gov"
 
     base_path = "genomes/all"
@@ -60,6 +63,42 @@ def run_ncbi_dataset_download(accession: str, assembly_name: str, output_dir: st
                 f_out.write(chunk)
 
     os.remove(compressed_name)
+
+
+def download_proteins(accession: str, assembly_name: str, output_dir: str) -> Dict[str, List[str]] | None:
+    base_url = "https://ftp.ncbi.nih.gov"
+
+    base_path = "genomes/all"
+    accession_url = ""
+    for i, c in enumerate(accession.split(".")[0].replace("_", "")):
+        if i % 3 == 0:
+            accession_url += "/"
+        accession_url += c
+
+    url = f"{base_url}/{base_path}{accession_url}/{accession}_{assembly_name}/{accession}_{assembly_name}_protein.faa.gz"
+    print(f"Downloading {url}", file=sys.stderr)
+
+    compressed_name = f"{output_dir}/{accession}.faa.gz"
+    decompressed_name = f"{output_dir}/{accession}.faa"
+    response = requests.get(url, stream=True)
+    response.raise_for_status()
+
+    with open(compressed_name, "wb") as f:
+        for chunk in response.iter_content(chunk_size=8192):
+            f.write(chunk)
+
+    print(f"Decompressing {compressed_name}")
+    chunk_size = 100 * 1024 * 1024  # 100 MB
+    with gzip.open(compressed_name, "rb") as f_in:
+        with open(decompressed_name, "wb") as f_out:
+            while True:
+                chunk = f_in.read(chunk_size)
+                if not chunk:
+                    break
+                f_out.write(chunk)
+
+    os.remove(compressed_name)
+
 
 
 def find_reference_genomes(name: str, level: str, max_rank: str = None, allow_clade: bool = False):

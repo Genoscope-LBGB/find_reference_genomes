@@ -3,6 +3,8 @@ include:
     file: cicd.yml
     inputs:
       module-name: "find_reference_genomes"
+      cd-branch: "master"
+      other-branches-as-named: true
 
 stages: 
   - deploy
@@ -10,3 +12,7 @@ stages:
 deploy:
   stage: deploy
   extends: .deploy
+
+deploy-futur:
+    stage: deploy
+    extends: .deploy-futur

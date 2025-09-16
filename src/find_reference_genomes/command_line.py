@@ -23,6 +23,21 @@ def main():
         default=None,
         help="Comma-separated list of GCA accessions to download (example: '-d GCA_047652355.1,GCA_049901935.1,GCA_048126915.1')")
     parser.add_argument(
+        "-p", "--proteins",
+        dest="download_proteins",
+        action="store_true",
+        required=False,
+        default=False,
+        help="When used with --download, also download the corresponding protein FASTA files (.faa)")
+    parser.add_argument(
+        "--no-genome",
+        dest="no_genome",
+        action="store_true",
+        required=False,
+        default=False,
+        help="When used with --download, do not download the genome (use with -p to download only proteins)")
+
+    parser.add_argument(
         "-o", "--output",
         dest="output_dir",
         type=str,
@@ -52,7 +67,7 @@ def main():
         help="Allow the search to include clade level (default: False)",
         default=False
     )
-    
+
     args = parser.parse_args()
 
     if args.name is None and args.download is None:
@@ -69,4 +84,5 @@ def main():
     if args.name:
         find_reference_genomes.find_reference_genomes(args.name, args.level, args.max_rank, args.allow_clade)
     elif args.download:
-        find_reference_genomes.download_genomes(args.download, args.output_dir)
+        find_reference_genomes.download_genomes(
+            args.download, args.output_dir, proteins=args.download_proteins, download_genome=(not args.no_genome))
