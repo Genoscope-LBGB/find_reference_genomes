@@ -11,7 +11,7 @@ from find_reference_genomes.genome import Genome
 from find_reference_genomes.lineage import Lineage
 
 
-def download_genomes(genomes_str: str, output_dir: str, download_proteins: bool = False, download_genome: bool = True):
+def download_genomes(genomes_str: str, output_dir: str, should_download_proteins: bool = False, should_download_genome: bool = True):
     try:
         os.makedirs(output_dir, exist_ok=True)
     except Exception:
@@ -24,9 +24,9 @@ def download_genomes(genomes_str: str, output_dir: str, download_proteins: bool 
             continue
 
         assembly_name = get_assembly_name(accession)
-        if download_genome:
+        if should_download_genome:
             download(accession, assembly_name, output_dir)
-        if download_proteins:
+        if should_download_proteins:
             download_proteins(accession, assembly_name, output_dir)
 
 
