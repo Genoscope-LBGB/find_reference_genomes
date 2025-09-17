@@ -25,9 +25,15 @@ def download_genomes(genomes_str: str, output_dir: str, should_download_proteins
 
         assembly_name = get_assembly_name(accession)
         if should_download_genome:
-            download(accession, assembly_name, output_dir)
+            try:
+                download(accession, assembly_name, output_dir)
+            except Exception as e:
+                print(f"ERROR: failed to download the genome: {e}")
         if should_download_proteins:
-            download_proteins(accession, assembly_name, output_dir)
+            try:
+                download_proteins(accession, assembly_name, output_dir)
+            except Exception as e:
+                print(f"ERROR: failed to download the proteins: {e}")
 
 
 def download(accession: str, assembly_name: str, output_dir: str) -> Dict[str, List[str]] | None:
