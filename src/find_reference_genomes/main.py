@@ -28,12 +28,12 @@ def download_genomes(genomes_str: str, output_dir: str, should_download_proteins
             try:
                 download(accession, assembly_name, output_dir)
             except Exception as e:
-                print(f"ERROR: failed to download the genome: {e}")
+                raise RuntimeError(f"Failed to download the genome for {accession}") from e
         if should_download_proteins:
             try:
                 download_proteins(accession, assembly_name, output_dir)
             except Exception as e:
-                print(f"ERROR: failed to download the proteins: {e}")
+                raise RuntimeError(f"Failed to download the proteins for {accession}") from e
 
 
 def download(accession: str, assembly_name: str, output_dir: str) -> Dict[str, List[str]] | None:
@@ -51,8 +51,19 @@ def download(accession: str, assembly_name: str, output_dir: str) -> Dict[str, L
 
     compressed_name = f"{output_dir}/{accession}.fna.gz"
     decompressed_name = f"{output_dir}/{accession}.fna"
-    response = requests.get(url, stream=True)
-    response.raise_for_status()
+    try:
+        response = requests.get(url, stream=True)
+    except requests.RequestException as exc:
+        raise RuntimeError(f"Failed to download the genome for {accession}: request error") from exc
+
+    if response.status_code == requests.codes.not_found:
+        print(f"WARN: genome file not found for {accession} at {url}", file=sys.stderr)
+        return
+
+    try:
+        response.raise_for_status()
+    except requests.HTTPError as exc:
+        raise RuntimeError(f"Failed to download the genome for {accession}: HTTP {response.status_code}") from exc
 
     with open(compressed_name, "wb") as f:
         for chunk in response.iter_content(chunk_size=8192):
@@ -86,8 +97,19 @@ def download_proteins(accession: str, assembly_name: str, output_dir: str) -> Di
 
     compressed_name = f"{output_dir}/{accession}.faa.gz"
     decompressed_name = f"{output_dir}/{accession}.faa"
-    response = requests.get(url, stream=True)
-    response.raise_for_status()
+    try:
+        response = requests.get(url, stream=True)
+    except requests.RequestException as exc:
+        raise RuntimeError(f"Failed to download the proteins for {accession}: request error") from exc
+
+    if response.status_code == requests.codes.not_found:
+        print(f"WARN: protein file not found for {accession} at {url}", file=sys.stderr)
+        return
+
+    try:
+        response.raise_for_status()
+    except requests.HTTPError as exc:
+        raise RuntimeError(f"Failed to download the proteins for {accession}: HTTP {response.status_code}") from exc
 
     with open(compressed_name, "wb") as f:
         for chunk in response.iter_content(chunk_size=8192):
