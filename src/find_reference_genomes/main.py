@@ -237,7 +237,7 @@ def get_assembly_name(accession):
     if ncbi_datasets["total_count"] > 0:
         for report in ncbi_datasets["reports"]:
             try:
-                assembly_name = report["assembly_info"]["assembly_name"]
+                assembly_name = report["assembly_info"]["assembly_name"].replace(" ", "_")
                 return assembly_name
             except:
                 pass
