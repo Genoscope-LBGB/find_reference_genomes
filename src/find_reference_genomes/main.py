@@ -11,7 +11,7 @@ from find_reference_genomes.genome import Genome
 from find_reference_genomes.lineage import Lineage
 
 
-def download_genomes(genomes_str: str, output_dir: str, should_download_proteins: bool = False, should_download_genome: bool = True):
+def download_genomes(genomes_str: str, output_dir: str, should_download_proteins: bool = False, should_download_genome: bool = True, should_rename_chromosomes: bool = False):
     try:
         os.makedirs(output_dir, exist_ok=True)
     except Exception:
@@ -26,7 +26,7 @@ def download_genomes(genomes_str: str, output_dir: str, should_download_proteins
         assembly_name = get_assembly_name(accession)
         if should_download_genome:
             try:
-                download(accession, assembly_name, output_dir)
+                download(accession, assembly_name, output_dir, rename_chromosomes=should_rename_chromosomes)
             except Exception as e:
                 raise RuntimeError(f"Failed to download the genome for {accession}") from e
         if should_download_proteins:
@@ -36,7 +36,7 @@ def download_genomes(genomes_str: str, output_dir: str, should_download_proteins
                 raise RuntimeError(f"Failed to download the proteins for {accession}") from e
 
 
-def download(accession: str, assembly_name: str, output_dir: str) -> Dict[str, List[str]] | None:
+def download(accession: str, assembly_name: str, output_dir: str, rename_chromosomes: bool = False) -> Dict[str, List[str]] | None:
     base_url = "https://ftp.ncbi.nih.gov"
 
     base_path = "genomes/all"
@@ -69,17 +69,77 @@ def download(accession: str, assembly_name: str, output_dir: str) -> Dict[str, L
         for chunk in response.iter_content(chunk_size=8192):
             f.write(chunk)
 
+    rename_map = {}
+    if rename_chromosomes:
+        report_url = url.replace("_genomic.fna.gz", "_assembly_report.txt")
+        report_text = fetch_assembly_report(report_url)
+        if report_text:
+            report_path = f"{output_dir}/{accession}_assembly_report.txt"
+            with open(report_path, "w") as f:
+                f.write(report_text)
+            rename_map = parse_assembly_report(report_text)
+
     print(f"Decompressing {compressed_name}")
-    chunk_size = 100 * 1024 * 1024  # 100 MB
-    with gzip.open(compressed_name, "rb") as f_in:
-        with open(decompressed_name, "wb") as f_out:
-            while True:
-                chunk = f_in.read(chunk_size)
-                if not chunk:
-                    break
-                f_out.write(chunk)
+    if rename_map:
+        with gzip.open(compressed_name, "rt") as f_in:
+            with open(decompressed_name, "w") as f_out:
+                for line in f_in:
+                    if line.startswith(">"):
+                        parts = line[1:].rstrip("\n").split(maxsplit=1)
+                        seqid = parts[0]
+                        if seqid in rename_map:
+                            desc = f" {parts[1]}" if len(parts) > 1 else ""
+                            line = f">chr{rename_map[seqid]}{desc}\n"
+                    f_out.write(line)
+    else:
+        chunk_size = 100 * 1024 * 1024  # 100 MB
+        with gzip.open(compressed_name, "rb") as f_in:
+            with open(decompressed_name, "wb") as f_out:
+                while True:
+                    chunk = f_in.read(chunk_size)
+                    if not chunk:
+                        break
+                    f_out.write(chunk)
 
     os.remove(compressed_name)
+
+
+def fetch_assembly_report(report_url: str) -> str:
+    print(f"Fetching assembly report {report_url}", file=sys.stderr)
+    try:
+        response = requests.get(report_url)
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        print(f"WARN: could not fetch assembly report at {report_url}: {exc}; skipping chromosome rename", file=sys.stderr)
+        return ""
+    return response.text
+
+
+def parse_assembly_report(report_text: str) -> Dict[str, str]:
+    """Map each assembled-molecule sequence accession to its chromosome name.
+
+    NCBI assembly_report.txt columns (tab-separated):
+      Sequence-Name, Sequence-Role, Assigned-Molecule, Assigned-Molecule-Location/Type,
+      GenBank-Accn, Relationship, RefSeq-Accn, Assembly-Unit, Sequence-Length, UCSC-style-name
+
+    Both GenBank and RefSeq accessions are keyed so the lookup works whether the
+    downloaded FASTA uses GCA (GenBank) or GCF (RefSeq) sequence ids. Scaffolds
+    (role != assembled-molecule, molecule == na) are skipped and left untouched.
+    """
+    mapping = {}
+    for line in report_text.splitlines():
+        if not line or line.startswith("#"):
+            continue
+        cols = line.split("\t")
+        if len(cols) < 7:
+            continue
+        role, molecule, genbank, refseq = cols[1], cols[2], cols[4], cols[6]
+        if role != "assembled-molecule" or molecule == "na":
+            continue
+        for accn in (genbank, refseq):
+            if accn and accn != "na":
+                mapping[accn] = molecule
+    return mapping
 
 
 def download_proteins(accession: str, assembly_name: str, output_dir: str) -> Dict[str, List[str]] | None:
