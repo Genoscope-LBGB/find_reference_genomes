@@ -8,7 +8,7 @@ Easily find and download reference genomes stored at NCBI
 
 ```
 find_reference_genomes -h
-usage: find_reference_genomes [-h] [-n NAME] [-d DOWNLOAD] [-p] [--no-genome] [-o OUTPUT_DIR] [-l {chromosome,complete,scaffold,contig}]
+usage: find_reference_genomes [-h] [-n NAME] [-d DOWNLOAD] [-p] [--no-genome] [-r] [-o OUTPUT_DIR] [-l {chromosome,complete,scaffold,contig}]
                               [--max-rank {strain,subspecies,species,genus,subfamily,family,suborder,order,subclass,class,phylum,kingdom,superkingdom}] [--allow-clade]
 
 Find and download reference genomes from the NCBI
@@ -20,6 +20,8 @@ options:
                         Comma-separated list of GCA accessions to download (example: '-d GCA_047652355.1,GCA_049901935.1,GCA_048126915.1')
   -p, --proteins        When used with --download, also download the corresponding protein FASTA files (.faa)
   --no-genome           When used with --download, do not download the genome (use with -p to download only proteins)
+  -r, --rename-chromosomes
+                        When used with --download, rename assembled-molecule sequence ids to chromosome names (chr1, chr2, ...) using the NCBI assembly report; scaffolds are left untouched
   -o OUTPUT_DIR, --output OUTPUT_DIR
                         If using --download, path to the output directory to store the downloaded genomes
   -l {chromosome,complete,scaffold,contig}, --level {chromosome,complete,scaffold,contig}
