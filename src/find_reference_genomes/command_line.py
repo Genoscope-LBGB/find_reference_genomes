@@ -36,6 +36,13 @@ def main():
         required=False,
         default=False,
         help="When used with --download, do not download the genome (use with -p to download only proteins)")
+    parser.add_argument(
+        "-r", "--rename-chromosomes",
+        dest="rename_chromosomes",
+        action="store_true",
+        required=False,
+        default=False,
+        help="When used with --download, rename assembled-molecule sequence ids to chromosome names (chr1, chr2, ...) using the NCBI assembly report; scaffolds are left untouched")
 
     parser.add_argument(
         "-o", "--output",
@@ -85,4 +92,4 @@ def main():
         find_reference_genomes.find_reference_genomes(args.name, args.level, args.max_rank, args.allow_clade)
     elif args.download:
         find_reference_genomes.download_genomes(
-            args.download, args.output_dir, should_download_proteins=args.download_proteins, should_download_genome=(not args.no_genome))
+            args.download, args.output_dir, should_download_proteins=args.download_proteins, should_download_genome=(not args.no_genome), should_rename_chromosomes=args.rename_chromosomes)
